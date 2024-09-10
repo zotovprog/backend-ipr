@@ -1,7 +1,9 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from "@nestjs/typeorm";
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { join } from 'path';
+import { ProductTypeModule } from './product-type/product-type.module';
+import { ProductModule } from './product/product.module';
 
 @Module({
   imports: [
@@ -14,9 +16,16 @@ import { AppService } from './app.service';
       database: 'poll_db',
       entities: [],
       synchronize: true,
+      autoLoadEntities: true,
+    }),
+    ProductModule,
+    ProductTypeModule,
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'uploads'), // Path to the 'uploads' directory
+      serveRoot: '/uploads', // The route at which files will be available
     }),
   ],
-  controllers: [AppController],
-  providers: [AppService],
+  controllers: [],
+  providers: [],
 })
 export class AppModule {}
