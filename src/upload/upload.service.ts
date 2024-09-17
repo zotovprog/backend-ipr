@@ -6,10 +6,9 @@ import { join } from 'path';
 
 @Injectable()
 export class UploadService {
-  private uploadFolder = './uploads'; // Define the folder for uploads
+  private uploadFolder = './uploads';
 
   constructor() {
-    // Ensure the upload folder exists
     if (!existsSync(this.uploadFolder)) {
       mkdirSync(this.uploadFolder, { recursive: true });
     }
@@ -17,16 +16,28 @@ export class UploadService {
 
   async uploadFile(file: File): Promise<string> {
     if (!file) {
-      throw new BadRequestException('File is required.');
+      throw new BadRequestException('Файл обязателен.');
     }
 
-    // Generate file path (you can also add unique identifiers like timestamp)
-    const filePath = join(this.uploadFolder, file.originalname);
+    // Дополнительная проверка MIME-типа
+    if (!file.mimetype.match(/^image\/(jpeg|png|gif|bmp|webp)$/)) {
+      throw new BadRequestException('Только изображения разрешены!');
+    }
 
-    // Save the file to the upload folder (file.buffer contains the uploaded file's data)
+    const fileName = `${Date.now()}-${file.originalname}`;
+    const filePath = join(this.uploadFolder, fileName);
+
     fs.writeFileSync(filePath, file.buffer);
 
-    // Return the relative path to the file (for example, for a URL in an API response)
-    return `/uploads/${file.originalname}`;
+    return `/uploads/${fileName}`;
+  }
+
+  async uploadFiles(files: File[]): Promise<string[]> {
+    const urls = [];
+    for (const file of files) {
+      const url = await this.uploadFile(file);
+      urls.push(url);
+    }
+    return urls;
   }
 }

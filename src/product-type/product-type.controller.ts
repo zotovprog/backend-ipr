@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -31,24 +32,20 @@ export class ProductTypeController {
     private readonly uploadService: UploadService,
   ) {}
 
-  @ApiOperation({ summary: 'Создать новый тип продукта с изображением' })
+  @ApiOperation({ summary: 'Создать новый тип продукта с иконкой' })
   @ApiResponse({
     status: 201,
     description: 'Тип продукта был успешно создан.',
   })
   @ApiResponse({ status: 400, description: 'Неверный ввод данных.' })
-  @ApiConsumes('multipart/form-data') // Specify that this method consumes form-data
+  @ApiConsumes('multipart/form-data')
   @ApiBody({
     description: 'Данные для создания нового типа продукта',
     required: true,
     schema: {
       type: 'object',
       properties: {
-        title: {
-          type: 'string',
-          description: 'Название типа продукта',
-          example: 'Смартфон',
-        },
+        title: { type: 'string', example: 'Смартфон' },
         file: {
           type: 'string',
           format: 'binary',
@@ -58,12 +55,24 @@ export class ProductTypeController {
     },
   })
   @Post()
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(
+    FileInterceptor('file', {
+      fileFilter: (req, file, callback) => {
+        if (!file.mimetype.match(/^image\/(jpeg|png|gif|bmp|webp)$/)) {
+          return callback(
+            new BadRequestException('Только изображения разрешены!'),
+            false,
+          );
+        }
+        callback(null, true);
+      },
+    }),
+  )
   async createProductType(
     @Body() productTypeDto: ProductTypeDto,
     @UploadedFile() file: File,
   ): Promise<ProductType> {
-    const imageUrl = await this.uploadService.uploadFile(file); // Upload the image and get the URL
+    const imageUrl = await this.uploadService.uploadFile(file);
     return this.productTypeService.createProductType(
       productTypeDto.title,
       imageUrl,
@@ -94,18 +103,14 @@ export class ProductTypeController {
     description: 'Тип продукта был успешно обновлен.',
   })
   @ApiResponse({ status: 404, description: 'Тип продукта не найден.' })
-  @ApiConsumes('multipart/form-data') // Specify that this method consumes form-data
+  @ApiConsumes('multipart/form-data')
   @ApiBody({
     description: 'Данные для обновления типа продукта',
     required: true,
     schema: {
       type: 'object',
       properties: {
-        title: {
-          type: 'string',
-          description: 'Название типа продукта',
-          example: 'Ноутбук',
-        },
+        title: { type: 'string', example: 'Ноутбук' },
         file: {
           type: 'string',
           format: 'binary',
@@ -115,13 +120,25 @@ export class ProductTypeController {
     },
   })
   @Put(':id')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(
+    FileInterceptor('file', {
+      fileFilter: (req, file, callback) => {
+        if (!file.mimetype.match(/^image\/(jpeg|png|gif|bmp|webp)$/)) {
+          return callback(
+            new BadRequestException('Только изображения разрешены!'),
+            false,
+          );
+        }
+        callback(null, true);
+      },
+    }),
+  )
   async updateProductType(
     @Param('id') id: number,
     @Body() productTypeDto: ProductTypeDto,
     @UploadedFile() file: File,
   ): Promise<ProductType> {
-    const imageUrl = await this.uploadService.uploadFile(file); // Upload the new image if provided
+    const imageUrl = await this.uploadService.uploadFile(file);
     return this.productTypeService.updateProductType(
       id,
       productTypeDto.title,
