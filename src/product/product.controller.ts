@@ -7,6 +7,7 @@ import {
   Param,
   Post,
   Put,
+  Query,
   UploadedFiles,
   UseInterceptors,
 } from '@nestjs/common';
@@ -15,6 +16,7 @@ import {
   ApiBody,
   ApiConsumes,
   ApiOperation,
+  ApiQuery,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
@@ -81,9 +83,31 @@ export class ProductController {
 
   @ApiOperation({ summary: 'Получить все продукты' })
   @ApiResponse({ status: 200, description: 'Возвращает все продукты.' })
+  @ApiQuery({
+    name: 'typeId',
+    required: false,
+    type: Number,
+    description: 'ID типа продукта для фильтрации',
+  })
+  @ApiQuery({
+    name: 'itemsPerPage',
+    required: false,
+    type: Number,
+    description: 'Количество продуктов на странице',
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Номер страницы',
+  })
   @Get()
-  async getAllProducts(): Promise<ProductListItemDto[]> {
-    return this.productService.getAllProducts();
+  async getAllProducts(
+    @Query('typeId') typeId?: number,
+    @Query('itemsPerPage') itemsPerPage?: number,
+    @Query('page') page?: number,
+  ): Promise<{ data: ProductListItemDto[]; total: number }> {
+    return this.productService.getAllProducts(typeId, itemsPerPage, page);
   }
 
   @ApiOperation({ summary: 'Получить продукт по ID' })

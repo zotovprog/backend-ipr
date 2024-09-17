@@ -38,21 +38,40 @@ export class ProductService {
     return this.productRepository.save(newProduct);
   }
 
-  // Get all Products
-  async getAllProducts(): Promise<ProductListItemDto[]> {
-    const products = await this.productRepository.find({
-      relations: ['images'],
-    });
+  // Get all Products, optionally filtered by typeId with pagination
+  async getAllProducts(
+    typeId?: number,
+    itemsPerPage: number = 10, // Default items per page
+    page: number = 1, // Default page
+  ): Promise<{ data: ProductListItemDto[]; total: number }> {
+    const query = this.productRepository
+      .createQueryBuilder('product')
+      .leftJoinAndSelect('product.images', 'images');
 
-    // Преобразование продуктов в формат ProductListItemDto
-    return products.map((product) => {
+    if (typeId) {
+      query.where('product.typeId = :typeId', { typeId });
+    }
+
+    // Get the total count before pagination
+    const total = await query.getCount();
+
+    // Apply pagination
+    const skip = (page - 1) * itemsPerPage;
+    query.skip(skip).take(itemsPerPage);
+
+    const products = await query.orderBy('product.id', 'ASC').getMany();
+
+    // Transform products to ProductListItemDto format
+    const data = products.map((product) => {
       return {
         id: product.id,
         title: product.title,
         price: product.price,
-        image: product.images.length > 0 ? product.images[0].url : null, // Первое изображение или null
+        image: product.images.length > 0 ? product.images[0].url : null, // First image or null
       };
     });
+
+    return { data, total };
   }
 
   // Get a Product by ID
