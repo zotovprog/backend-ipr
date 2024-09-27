@@ -6,7 +6,7 @@ import {
   OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { ProductType } from '../product-type/product-type.entity'; // Adjust the path as necessary
+import { ProductType } from '../product-type/product-type.entity';
 
 @Entity()
 export class Product {
@@ -18,6 +18,12 @@ export class Product {
 
   @Column()
   price: number;
+
+  @Column({ nullable: true })
+  brand: string;
+
+  @Column({ nullable: true, type: 'int' })
+  memoryAmount: number;
 
   @ManyToOne(() => ProductType, (productType) => productType.id, {
     eager: true,

@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { IsNumber, IsString } from 'class-validator';
+import { IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class ProductDto {
   @ApiProperty({ description: 'Название продукта', example: 'Смартфон' })
@@ -16,4 +16,23 @@ export class ProductDto {
   @Transform(({ value }) => Number(value))
   @IsNumber()
   price: number;
+
+  @ApiProperty({
+    description: 'Бренд продукта',
+    example: 'Samsung',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  brand?: string;
+
+  @ApiProperty({
+    description: 'Объем памяти продукта',
+    example: 64,
+    required: false,
+  })
+  @IsOptional()
+  @Transform(({ value }) => Number(value))
+  @IsNumber()
+  memoryAmount?: number;
 }

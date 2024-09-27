@@ -21,12 +21,18 @@ export class ProductService {
     title: string,
     typeId: number,
     imageUrls: string[],
+    price: number,
+    brand?: string,
+    memoryAmount?: number,
   ): Promise<Product> {
     const productType =
       await this.productTypeService.getProductTypeById(typeId);
     const newProduct = this.productRepository.create({
       title,
       type: productType,
+      price,
+      brand,
+      memoryAmount,
     });
 
     newProduct.images = imageUrls.map((url) => {
@@ -41,15 +47,37 @@ export class ProductService {
   // Get all Products, optionally filtered by typeId with pagination
   async getAllProducts(
     typeId?: number,
-    itemsPerPage: number = 10, // Default items per page
-    page: number = 1, // Default page
+    itemsPerPage: number = 10,
+    page: number = 1,
+    brands?: string[],
+    memoryAmounts?: number[],
+    priceFrom?: number,
+    priceTo?: number,
   ): Promise<{ data: ProductListItemDto[]; total: number }> {
     const query = this.productRepository
       .createQueryBuilder('product')
       .leftJoinAndSelect('product.images', 'images');
 
     if (typeId) {
-      query.where('product.typeId = :typeId', { typeId });
+      query.andWhere('product.typeId = :typeId', { typeId });
+    }
+
+    if (brands && brands.length > 0) {
+      query.andWhere('product.brand IN (:...brands)', { brands });
+    }
+
+    if (memoryAmounts && memoryAmounts.length > 0) {
+      query.andWhere('product.memoryAmount IN (:...memoryAmounts)', {
+        memoryAmounts,
+      });
+    }
+
+    if (priceFrom) {
+      query.andWhere('product.price >= :priceFrom', { priceFrom });
+    }
+
+    if (priceTo) {
+      query.andWhere('product.price <= :priceTo', { priceTo });
     }
 
     // Get the total count before pagination
@@ -86,18 +114,40 @@ export class ProductService {
   // Update a Product by ID
   async updateProduct(
     id: number,
-    title: string,
-    typeId: number,
-    imageUrls: string[],
+    title?: string,
+    typeId?: number,
+    imageUrls?: string[],
+    price?: number,
+    brand?: string,
+    memoryAmount?: number,
   ): Promise<Product> {
     const product = await this.getProductById(id);
-    const productType =
-      await this.productTypeService.getProductTypeById(typeId);
 
-    product.title = title;
-    product.type = productType;
+    // Update fields only if the new values are not undefined or null
+    if (title !== undefined && title !== null) {
+      product.title = title;
+    }
 
-    if (imageUrls.length > 0) {
+    if (typeId !== undefined && typeId !== null) {
+      const productType =
+        await this.productTypeService.getProductTypeById(typeId);
+      product.type = productType;
+    }
+
+    if (price !== undefined && price !== null) {
+      product.price = price;
+    }
+
+    if (brand !== undefined && brand !== null) {
+      product.brand = brand;
+    }
+
+    if (memoryAmount !== undefined && memoryAmount !== null) {
+      product.memoryAmount = memoryAmount;
+    }
+
+    // Update images if imageUrls is provided and not empty
+    if (imageUrls && imageUrls.length > 0) {
       // Remove existing images
       await this.productImageRepository.delete({ product: { id } });
 
