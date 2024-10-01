@@ -5,6 +5,14 @@ import { ProductListItemDto } from 'src/product/product-list-item.dto';
 import { Repository } from 'typeorm';
 import { ProductTypeService } from '../product-type/product-type.service';
 import { Product } from './product.entity';
+import { AdditionalInfoItem } from './entities/additional-info-item.entity';
+import { Color } from './entities/color.entity';
+import { ShortInfoItem } from './entities/short-info-item.entity';
+import {
+  ColorDto,
+  ShortInfoItemDto,
+  AdditionalInfoItemDto,
+} from './product.dto';
 
 @Injectable()
 export class ProductService {
@@ -24,6 +32,10 @@ export class ProductService {
     price: number,
     brand?: string,
     memoryAmount?: number,
+    color?: ColorDto,
+    selectable_values?: string[],
+    short_info?: ShortInfoItemDto[],
+    additionalInfo?: AdditionalInfoItemDto[],
   ): Promise<Product> {
     const productType =
       await this.productTypeService.getProductTypeById(typeId);
@@ -40,6 +52,36 @@ export class ProductService {
       image.url = url;
       return image;
     });
+
+    if (color) {
+      const colorEntity = new Color();
+      colorEntity.title = color.title;
+      colorEntity.color = color.color;
+      newProduct.color = colorEntity;
+    }
+
+    if (selectable_values) {
+      newProduct.selectable_values = selectable_values;
+    }
+
+    if (short_info && short_info.length > 0) {
+      newProduct.short_info = short_info.map((info) => {
+        const item = new ShortInfoItem();
+        item.title = info.title;
+        item.icon = info.icon;
+        item.value = info.value;
+        return item;
+      });
+    }
+
+    if (additionalInfo && additionalInfo.length > 0) {
+      newProduct.additionalInfo = additionalInfo.map((info) => {
+        const item = new AdditionalInfoItem();
+        item.title = info.title;
+        item.value = info.value;
+        return item;
+      });
+    }
 
     return this.productRepository.save(newProduct);
   }

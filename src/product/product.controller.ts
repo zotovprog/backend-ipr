@@ -58,6 +58,39 @@ export class ProductController {
           items: { type: 'string', format: 'binary' },
           description: 'Галерея продукта',
         },
+        color: {
+          type: 'object',
+          properties: {
+            title: { type: 'string', example: 'Red' },
+            color: { type: 'string', example: '#FF0000' },
+          },
+        },
+        selectable_values: {
+          type: 'array',
+          items: { type: 'string' },
+          example: ['Option1', 'Option2'],
+        },
+        short_info: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              title: { type: 'string', example: 'Battery' },
+              icon: { type: 'string', example: 'battery-icon.png' },
+              value: { type: 'string', example: '5000mAh' },
+            },
+          },
+        },
+        additionalInfo: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              title: { type: 'string', example: 'Warranty' },
+              value: { type: 'string', example: '2 years' },
+            },
+          },
+        },
       },
     },
   })
@@ -79,7 +112,18 @@ export class ProductController {
     @Body() productDto: ProductDto,
     @UploadedFiles() files: File[],
   ): Promise<Product> {
-    const { title, typeId, price, brand, memoryAmount } = productDto;
+    const {
+      title,
+      typeId,
+      price,
+      brand,
+      memoryAmount,
+      color,
+      selectable_values,
+      short_info,
+      additionalInfo,
+    } = productDto;
+
     const imageUrls = await this.uploadService.uploadFiles(files);
     return this.productService.createProduct(
       title,
@@ -88,6 +132,10 @@ export class ProductController {
       price,
       brand,
       memoryAmount,
+      color,
+      selectable_values,
+      short_info,
+      additionalInfo,
     );
   }
 
